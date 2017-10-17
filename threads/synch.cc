@@ -91,6 +91,7 @@ Semaphore::V()
     IntStatus oldLevel = interrupt->SetLevel(IntOff);
 
     thread = (Thread *)queue->Remove();
+
     if (thread != NULL)	   // make thread ready, consuming the V immediately
 	scheduler->ReadyToRun(thread);
     value++;
@@ -100,13 +101,114 @@ Semaphore::V()
 // Dummy functions -- so we can compile our later assignments 
 // Note -- without a correct implementation of Condition::Wait(), 
 // the test case in the network assignment won't work!
-Lock::Lock(char* debugName) {}
-Lock::~Lock() {}
-void Lock::Acquire() {}
-void Lock::Release() {}
+Lock::Lock(char* debugName) 
+{
+	name = debugName;
+	semaphore = new Semaphore(debugName, 1);
+	threadHoldTheLock = NULL;
+}
+Lock::~Lock()
+{
+	delete semaphore;
+}
+void Lock::Acquire() 
+{
+	semaphore->P();
+	threadHoldTheLock = currentThread;
+}
+void Lock::Release() 
+{
+	
+	if(isHeldByCurrentThread())
+	{
+		semaphore->V();
+		threadHoldTheLock = NULL;
+	}
+}
+bool Lock::isHeldByCurrentThread()
+{
+	if(threadHoldTheLock == currentThread)
+		return true;
+	else
+		return false;
+}
 
-Condition::Condition(char* debugName) { }
-Condition::~Condition() { }
-void Condition::Wait(Lock* conditionLock) { ASSERT(FALSE); }
-void Condition::Signal(Lock* conditionLock) { }
-void Condition::Broadcast(Lock* conditionLock) { }
+Condition::Condition(char* debugName) 
+{
+	name = debugName;
+	queue = new List;
+}
+Condition::~Condition() 
+{
+	delete queue;
+ }
+void Condition::Wait(Lock* conditionLock)
+{
+	//ASSERT(FALSE);
+	 
+	conditionLock->Release();
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+	queue->Append((void *)currentThread);
+	currentThread->Sleep();
+	(void) interrupt->SetLevel(oldLevel);
+	conditionLock->Acquire();
+}
+void Condition::Signal(Lock* conditionLock)
+{
+	Thread *thread;
+    IntStatus oldLevel = interrupt->SetLevel(IntOff);
+
+    thread = (Thread *)queue->Remove();
+    if (thread != NULL)	   // make thread ready, consuming the V immediately
+	scheduler->ReadyToRun(thread);
+    (void) interrupt->SetLevel(oldLevel);
+}
+void Condition::Broadcast(Lock* conditionLock) 
+{
+	Thread *thread;
+	thread = (Thread *)queue->Remove();
+	while(thread != NULL)
+	{
+		scheduler->ReadyToRun(thread);
+		thread = (Thread *)queue->Remove();
+	}
+
+}
+
+RWLock::RWLock(char *debugName)
+{
+	name = debugName;
+	rdlock = new Lock("rdlock");
+	wrlock = new Semaphore("wrlock", 1);
+	readers = 0;
+}
+RWLock::~RWLock()
+{
+	delete rdlock;
+	delete wrlock;
+}
+
+void RWLock::rdLock()
+{
+	rdlock->Acquire();
+	if(readers == 0)
+		wrlock->P();
+	readers+=1;
+	rdlock->Release();
+}
+void RWLock::wrLock()
+{
+	wrlock->P();
+}
+void RWLock::rdUnlock()
+{
+	rdlock->Acquire();
+	readers -= 1;
+	if(readers == 0)
+		wrlock->V();
+	rdlock->Release();
+}
+void RWLock::wrUnlock()
+{
+	wrlock->V();
+}

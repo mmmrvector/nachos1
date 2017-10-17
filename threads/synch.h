@@ -79,7 +79,10 @@ class Lock {
 
   private:
     char* name;				// for debugging
-    // plus some other stuff you'll need to define
+    bool lockon;			// false if lock is free, true if lock
+	Semaphore *semaphore;						//is busy
+	Thread *threadHoldTheLock;
+// plus some other stuff you'll need to define
 };
 
 // The following class defines a "condition variable".  A condition
@@ -131,6 +134,22 @@ class Condition {
 
   private:
     char* name;
+	List *queue;
     // plus some other stuff you'll need to define
 };
 #endif // SYNCH_H
+
+class RWLock{
+	public:
+	RWLock(char *debugName);
+	~RWLock();
+	void rdLock();
+	void wrLock();
+	void rdUnlock();
+	void wrUnlock();
+	private:
+	char *name;
+	Lock *rdlock;
+	Semaphore *wrlock;
+	int readers;
+};
