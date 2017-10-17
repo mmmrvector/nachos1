@@ -128,7 +128,7 @@ void consumer(int which)
 void
 SimpleThread(int which)
 {
-	for(int i = 0; i < 12; i ++)
+	for(int i = 0; i < 3; i ++)
 	{
 		if(which <= 2)
 			produce(which);
@@ -204,13 +204,13 @@ VectorTest()
 {
 	Thread *t[130];
 
-    for(int i = 1; i <= 5; i ++)
+    for(int i = 1; i <= 4; i ++)
 	{
 		printf("thread %d is created\n", i);
 	    char *name = new char;
 		name = "forked thread" + i;
 		t[i] = new Thread("thread", i);
-		t[i]->Fork(readWriteThread, i);		
+		t[i]->Fork(SimpleThread, i);		
 	}
 	//SimpleThread(0);
 }
