@@ -150,7 +150,6 @@ void readThread(int which)
 	printf("thread%d get into the critical area\n", which);
 	printf("thread%d read the data: %d\n", which, data);
 	//switch	
-	if(which == 1)
 	currentThread->Yield();
 	printf("thread%d leave the critical area\n", which);
 	//release read lock	
