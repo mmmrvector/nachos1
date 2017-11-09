@@ -196,12 +196,14 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 // check for alignment errors
     if (((size == 4) && (virtAddr & 0x3)) || ((size == 2) && (virtAddr & 0x1))){
 	DEBUG('a', "alignment problem at %d, size %d!\n", virtAddr, size);
+	
 	return AddressErrorException;
     }
     
     // we must have either a TLB or a page table, but not both!
-    ASSERT(tlb == NULL || pageTable == NULL);	
-    ASSERT(tlb != NULL || pageTable != NULL);	
+	
+    //ASSERT(tlb == NULL || pageTable == NULL);	
+    //ASSERT(tlb != NULL || pageTable != NULL);	
 
 // calculate the virtual page number, and offset within the page,
 // from the virtual address
@@ -210,10 +212,12 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
     
     if (tlb == NULL) {		// => page table => vpn is index into table
 	if (vpn >= pageTableSize) {
+		
 	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
 			virtAddr, pageTableSize);
 	    return AddressErrorException;
 	} else if (!pageTable[vpn].valid) {
+		
 	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
 			virtAddr, pageTableSize);
 	    return PageFaultException;
@@ -221,10 +225,14 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 	entry = &pageTable[vpn];
     } else {
         for (entry = NULL, i = 0; i < TLBSize; i++)
+	{
     	    if (tlb[i].valid && (tlb[i].virtualPage == vpn)) {
+		lasttime[i] = stats->totalTicks;
+		tlbhit ++;
 		entry = &tlb[i];			// FOUND!
 		break;
 	    }
+	}
 	if (entry == NULL) {				// not found
     	    DEBUG('a', "*** no valid TLB entry found for this virtual page!\n");
     	    return PageFaultException;		// really, this is a TLB fault,

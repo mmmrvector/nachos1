@@ -7,7 +7,7 @@
 
 #include "copyright.h"
 #include "system.h"
-
+#include "bitmap.h"
 // This defines *all* of the global data structures used by Nachos.
 // These are all initialized and de-allocated by this file.
 
@@ -29,6 +29,7 @@ SynchDisk   *synchDisk;
 
 #ifdef USER_PROGRAM	// requires either FILESYS or FILESYS_STUB
 Machine *machine;	// user program memory and registers
+BitMap *memBitMap;
 #endif
 
 #ifdef NETWORK
@@ -61,11 +62,15 @@ static void
 TimerInterruptHandler(int dummy)
 {
 	
-	int ts = (currentThread->getTimeSlice() + 1) % 2;
+	int ts = (currentThread->getTimeSlice() + 1) % 10;
 	//printf("current time slice is %d\n", ts);
+	//printf("current thread is %s\n", currentThread->getName());
 	currentThread->setTimeSlice(ts);
-    if (interrupt->getStatus() != IdleMode && (currentThread->getTimeSlice()) == 1)
+    if (interrupt->getStatus() != IdleMode && (currentThread->getTimeSlice()) == 5)
+	{
+		printf("current thread is %s\n", currentThread->getName());
 		interrupt->YieldOnReturn();
+	}
 
 }
 
@@ -153,6 +158,7 @@ Initialize(int argc, char **argv)
     CallOnUserAbort(Cleanup);			// if user hits ctl-C
     
 #ifdef USER_PROGRAM
+	memBitMap = new BitMap(4096);
     machine = new Machine(debugUserProg);	// this must come first
 #endif
 

@@ -245,6 +245,9 @@ void
 Interrupt::Halt()
 {
     printf("Machine halting!\n\n");
+	printf("tlb hit:%d\n", machine->tlbhit);
+	printf("tlb miss:%d\n", machine->tlbmiss);
+	printf("rate:%f\n",(double)( machine->tlbhit)/(machine->tlbhit + machine->tlbmiss));
     stats->Print();
     Cleanup();     // Never returns.
 }

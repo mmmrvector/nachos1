@@ -56,7 +56,62 @@ ExceptionHandler(ExceptionType which)
     if ((which == SyscallException) && (type == SC_Halt)) {
 	DEBUG('a', "Shutdown, initiated by user program.\n");
    	interrupt->Halt();
-    } else {
+    }
+	else if((which == PageFaultException))
+	{
+		
+		machine->tlbmiss ++;
+		int virtAddr = machine->registers[BadVAddrReg];
+		unsigned int vpn = (unsigned) virtAddr / PageSize;
+		bool flag = false;
+		//for(int  i = 0; i < TLBSize; i ++)
+		//{
+		//	if(machine->tlb[i].valid == FALSE)
+		//	{
+			int i = machine->flag;
+			(machine->tlb[i]).virtualPage = vpn;
+			(machine->tlb[i]).physicalPage =  (machine->pageTable[vpn]).physicalPage;
+			printf("vpn:%d physicPage: %d\n", vpn, (machine->pageTable[vpn]).physicalPage);
+			(machine->tlb[i]).valid = (machine->pageTable[vpn]).valid;
+			(machine->tlb[i]).use =  (machine->pageTable[vpn]).use;
+			(machine->tlb[i]).dirty =  (machine->pageTable[vpn]).dirty;
+			(machine->tlb[i]).readOnly =  (machine->pageTable[vpn]).readOnly; 	
+			
+			machine->flag = (machine->flag + 1 )% 4;
+			//flag = true;
+			//break;
+			//}
+		//}
+		/*
+		if(!flag)
+		{
+			//int i = machine->flag;
+			int temp = 2147483646;
+			int temp_idx= 0;
+			for(int i = 0; i < 4; i ++)
+			{
+				printf("lasttime: %d\n", (machine->lasttime)[i]);
+				if((machine->lasttime)[i] < temp)
+				{
+					temp_idx = i;
+					temp = (machine->lasttime)[i];
+					//printf("time: %d\n", temp);
+				}
+			}
+			(machine->tlb[temp_idx]).virtualPage = vpn;
+			(machine->tlb[temp_idx]).physicalPage = vpn;
+			(machine->tlb[temp_idx]).valid = 1;
+			(machine->tlb[temp_idx]).use = FALSE;
+			(machine->tlb[temp_idx]).dirty = FALSE;
+			(machine->tlb[temp_idx]).readOnly = FALSE; 	
+			//machine->flag = (machine->flag + 1 )% 4;
+			//flag = true;
+		}
+		*/
+		//ASSERT(FALSE);
+	}
+	
+    else {
 	printf("Unexpected user mode exception %d %d\n", which, type);
 	ASSERT(FALSE);
     }

@@ -32,7 +32,7 @@
 					// the disk sector size, for
 					// simplicity
 
-#define NumPhysPages    32
+#define NumPhysPages    1024
 #define MemorySize 	(NumPhysPages * PageSize)
 #define TLBSize		4		// if there is a TLB, make it small
 
@@ -80,6 +80,7 @@ enum ExceptionType { NoException,           // Everything ok!
 
 class Instruction {
   public:
+	
     void Decode();	// decode the binary representation of the instruction
 
     unsigned int value; // binary representation of the instruction
@@ -117,8 +118,10 @@ class Machine {
 
     void WriteRegister(int num, int value);
 				// store a value into a CPU register
-
-
+	int flag;
+	int tlbmiss;
+	int lasttime[4];
+	int tlbhit;
 // Routines internal to the machine simulation -- DO NOT call these 
 
     void OneInstruction(Instruction *instr); 	

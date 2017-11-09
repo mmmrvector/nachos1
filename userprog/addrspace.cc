@@ -86,10 +86,14 @@ AddrSpace::AddrSpace(OpenFile *executable)
     DEBUG('a', "Initializing address space, num pages %d, size %d\n", 
 					numPages, size);
 // first, set up the translation 
+
     pageTable = new TranslationEntry[numPages];
     for (i = 0; i < numPages; i++) {
 	pageTable[i].virtualPage = i;	// for now, virtual page # = phys page #
-	pageTable[i].physicalPage = i;
+	pageTable[i].physicalPage = memBitMap->Find();
+	//if(i == 4)
+		//interrupt->OneTick();
+	printf("physical page %d is created\n", pageTable[i].physicalPage);
 	pageTable[i].valid = TRUE;
 	pageTable[i].use = FALSE;
 	pageTable[i].dirty = FALSE;
@@ -97,24 +101,43 @@ AddrSpace::AddrSpace(OpenFile *executable)
 					// a separate page, we could set its 
 					// pages to be read-only
     }
-    
+	//printf("addr:%p\n",pageTable);
+
 // zero out the entire address space, to zero the unitialized data segment 
 // and the stack segment
-    bzero(machine->mainMemory, size);
+    //bzero(machine->mainMemory, size);
 
 // then, copy in the code and data segments into memory
     if (noffH.code.size > 0) {
         DEBUG('a', "Initializing code segment, at 0x%x, size %d\n", 
 			noffH.code.virtualAddr, noffH.code.size);
-        executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
-			noffH.code.size, noffH.code.inFileAddr);
+	int codePos = noffH.code.inFileAddr;
+	for(int j = 0; j < noffH.code.size; j ++)
+	{
+		
+		int tempvpn = (noffH.code.virtualAddr + j)/PageSize;
+		int tempoff = (noffH.code.virtualAddr + j)%PageSize;
+		int tempVaddr = pageTable[tempvpn].physicalPage*PageSize + tempoff;
+		executable->ReadAt(&(machine->mainMemory[tempVaddr]), 1, codePos++);
+	}
+        //executable->ReadAt(&(machine->mainMemory[noffH.code.virtualAddr]),
+			//noffH.code.size, noffH.code.inFileAddr);
     }
     if (noffH.initData.size > 0) {
         DEBUG('a', "Initializing data segment, at 0x%x, size %d\n", 
 			noffH.initData.virtualAddr, noffH.initData.size);
-        executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
-			noffH.initData.size, noffH.initData.inFileAddr);
-    }
+		int dataPos = noffH.initData.inFileAddr;
+		for(int j = 0; j <noffH.initData.size; j ++)
+		{
+		
+		int tempvpn = (noffH.initData.virtualAddr + j)/PageSize;
+		int tempoff = (noffH.initData.virtualAddr + j)%PageSize;
+		int tempVaddr = pageTable[tempvpn].physicalPage*PageSize + tempoff;
+		executable->ReadAt(&(machine->mainMemory[tempVaddr]), 1, dataPos ++);
+        //executable->ReadAt(&(machine->mainMemory[noffH.initData.virtualAddr]),
+			//noffH.initData.size, noffH.initData.inFileAddr);
+    	}
+	}
 
 }
 
@@ -184,3 +207,5 @@ void AddrSpace::RestoreState()
     machine->pageTable = pageTable;
     machine->pageTableSize = numPages;
 }
+
+

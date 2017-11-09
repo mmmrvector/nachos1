@@ -55,7 +55,11 @@ void CheckEndian()
 Machine::Machine(bool debug)
 {
     int i;
-
+	flag = 0;
+	tlbmiss = 0;
+	tlbhit = 0;
+	for(int i = 0; i < 4; i ++)
+		lasttime[i] = stats->totalTicks;
     for (i = 0; i < NumTotalRegs; i++)
         registers[i] = 0;
     mainMemory = new char[MemorySize];
@@ -66,6 +70,7 @@ Machine::Machine(bool debug)
     for (i = 0; i < TLBSize; i++)
 	tlb[i].valid = FALSE;
     pageTable = NULL;
+	printf("create tlb!\n");
 #else	// use linear page table
     tlb = NULL;
     pageTable = NULL;
