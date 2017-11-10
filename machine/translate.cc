@@ -196,7 +196,7 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 // check for alignment errors
     if (((size == 4) && (virtAddr & 0x3)) || ((size == 2) && (virtAddr & 0x1))){
 	DEBUG('a', "alignment problem at %d, size %d!\n", virtAddr, size);
-	
+	printf("bb\n");
 	return AddressErrorException;
     }
     
@@ -207,22 +207,30 @@ Machine::Translate(int virtAddr, int* physAddr, int size, bool writing)
 
 // calculate the virtual page number, and offset within the page,
 // from the virtual address
+	//printf("virtAddr:%d\n", virtAddr);
     vpn = (unsigned) virtAddr / PageSize;
     offset = (unsigned) virtAddr % PageSize;
-    
     if (tlb == NULL) {		// => page table => vpn is index into table
-	if (vpn >= pageTableSize) {
-		
-	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
-			virtAddr, pageTableSize);
-	    return AddressErrorException;
-	} else if (!pageTable[vpn].valid) {
-		
+		bool existPageFault = TRUE;
+		for(int i = 0; i <NumPhysPages; i ++)
+		{
+			if((currentThread->gettid() == (machine->pageTable[i]).tid) &&(machine->pageTable[i]).valid && ((machine->pageTable[i]).virtualPage == vpn)) 	
+			{
+				existPageFault = FALSE;
+				machine->pagehit ++;
+				entry = &(machine->pageTable[i]);
+				pageLasttime[(machine->pageTable[i]).physicalPage] = stats->totalTicks;
+
+			}
+		}
+	 if (existPageFault) {
+		printf("this is a pagefalut\n");
+		machine->pagemiss++;
 	    DEBUG('a', "virtual page # %d too large for page table size %d!\n", 
 			virtAddr, pageTableSize);
 	    return PageFaultException;
 	}
-	entry = &pageTable[vpn];
+
     } else {
         for (entry = NULL, i = 0; i < TLBSize; i++)
 	{

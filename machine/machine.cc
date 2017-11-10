@@ -58,6 +58,8 @@ Machine::Machine(bool debug)
 	flag = 0;
 	tlbmiss = 0;
 	tlbhit = 0;
+	pagemiss = 0;
+	pagehit = 0;
 	for(int i = 0; i < 4; i ++)
 		lasttime[i] = stats->totalTicks;
     for (i = 0; i < NumTotalRegs; i++)
@@ -73,9 +75,32 @@ Machine::Machine(bool debug)
 	printf("create tlb!\n");
 #else	// use linear page table
     tlb = NULL;
-    pageTable = NULL;
+    pageTable = new TranslationEntry[32];
+	for(i = 0; i < NumPhysPages; i ++)
+	{
+		pageTable[i].virtualPage = -1;
+		pageTable[i].physicalPage = -1;
+		pageTable[i].valid = FALSE;
+		pageTable[i].readOnly = FALSE;
+		pageTable[i].use = FALSE;
+		pageTable[i].dirty = FALSE;
+		pageTable[i].tid = -1;
+	}
 #endif
-
+	//initialize inverted page table
+	/*
+	invertedPageTable = new InvertedPageTableEntry[32];
+	for(i = 0; i < 32; i ++)
+	{
+		invertedPageTable[i].vpn = 0;
+		invertedPageTable[i].tid = -1;
+		invertedPageTable[i].dirty = FALSE;
+		invertedPageTable[i].valid = FALSE;
+		invertedPageTable[i].readOnly = FALSE;
+	}
+	*/
+	disk = fileSystem->Open("disk");
+	diskPos = 0;
     singleStep = debug;
     CheckEndian();
 }

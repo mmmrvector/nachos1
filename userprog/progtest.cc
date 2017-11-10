@@ -28,31 +28,30 @@ void SimpleThread()
 void
 StartProcess(char *filename)
 {
-	Thread *thread = new Thread("newThread"); 
+	//Thread *thread = new Thread("newThread"); 
     OpenFile *executable = fileSystem->Open(filename);
-    OpenFile *executable1 = fileSystem->Open("../test/matmult");
+    //OpenFile *executable1 = fileSystem->Open("../test/matmult");
     AddrSpace *space;
-	AddrSpace *space1;
-
+	//AddrSpace *space1;
+	
     if (executable == NULL) {
 	printf("Unable to open file %s\n", filename);
 	return;
     }
     space = new AddrSpace(executable);
-	space1 = new AddrSpace(executable1);
+	//space1 = new AddrSpace(executable1);
 	
-    
+   
     currentThread->space = space;
-	thread->space = space1;
+	//thread->space = space1;
     delete executable;			// close file
-	delete executable1;
+	//delete executable1;
 
     space->InitRegisters();		// set the initial register values
     space->RestoreState();		// load page table register
 
 	
-	thread->Fork(SimpleThread, 1);
-
+	//thread->Fork(SimpleThread, 1);
     machine->Run();			// jump to the user progam
     ASSERT(FALSE);			// machine->Run never returns;
 					// the address space exits

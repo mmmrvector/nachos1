@@ -60,59 +60,61 @@ ExceptionHandler(ExceptionType which)
 	else if((which == PageFaultException))
 	{
 		
-		machine->tlbmiss ++;
-		int virtAddr = machine->registers[BadVAddrReg];
-		unsigned int vpn = (unsigned) virtAddr / PageSize;
-		bool flag = false;
-		//for(int  i = 0; i < TLBSize; i ++)
-		//{
-		//	if(machine->tlb[i].valid == FALSE)
-		//	{
-			int i = machine->flag;
-			(machine->tlb[i]).virtualPage = vpn;
-			(machine->tlb[i]).physicalPage =  (machine->pageTable[vpn]).physicalPage;
-			printf("vpn:%d physicPage: %d\n", vpn, (machine->pageTable[vpn]).physicalPage);
-			(machine->tlb[i]).valid = (machine->pageTable[vpn]).valid;
-			(machine->tlb[i]).use =  (machine->pageTable[vpn]).use;
-			(machine->tlb[i]).dirty =  (machine->pageTable[vpn]).dirty;
-			(machine->tlb[i]).readOnly =  (machine->pageTable[vpn]).readOnly; 	
-			
-			machine->flag = (machine->flag + 1 )% 4;
-			//flag = true;
-			//break;
-			//}
-		//}
-		/*
-		if(!flag)
-		{
-			//int i = machine->flag;
-			int temp = 2147483646;
-			int temp_idx= 0;
-			for(int i = 0; i < 4; i ++)
-			{
-				printf("lasttime: %d\n", (machine->lasttime)[i]);
-				if((machine->lasttime)[i] < temp)
-				{
-					temp_idx = i;
-					temp = (machine->lasttime)[i];
-					//printf("time: %d\n", temp);
-				}
-			}
-			(machine->tlb[temp_idx]).virtualPage = vpn;
-			(machine->tlb[temp_idx]).physicalPage = vpn;
-			(machine->tlb[temp_idx]).valid = 1;
-			(machine->tlb[temp_idx]).use = FALSE;
-			(machine->tlb[temp_idx]).dirty = FALSE;
-			(machine->tlb[temp_idx]).readOnly = FALSE; 	
-			//machine->flag = (machine->flag + 1 )% 4;
-			//flag = true;
-		}
-		*/
-		//ASSERT(FALSE);
+		machine->LRU();
 	}
 	
     else {
 	printf("Unexpected user mode exception %d %d\n", which, type);
 	ASSERT(FALSE);
     }
+}
+
+void Machine::LRU()
+{
+		
+		int virtAddr = machine->registers[BadVAddrReg];
+		unsigned int vpn = (unsigned) virtAddr / PageSize;
+		bool noPageLeft = TRUE;
+		int temp_i = 0;
+		//if there is page table not been used
+		for(int i = 0; i < NumPhysPages; i ++)
+		{
+			if((machine->pageTable[i]).use == FALSE)
+			{
+				(machine->pageTable[i]).physicalPage = memBitMap->Find();
+				//printf("physic :%d\n",(machine->pageTable[i]).physicalPage); 
+				(machine->pageTable[i]).tid = currentThread->gettid();
+				(machine->pageTable[i]).virtualPage = vpn;
+				(machine->pageTable[i]).valid = TRUE;
+				noPageLeft = FALSE;
+				temp_i = i;
+				break;
+			}
+		}
+
+		//all the physical page have been used
+		if(noPageLeft == TRUE)
+		{
+			printf("all the physical pages have been used\n");
+			int temp = 2147483644;	
+
+			for(int i = 0; i < NumPhysPages; i ++)
+			{
+				if(machine->pageLasttime[i] < temp)
+				{
+					temp = machine->pageLasttime[i];
+					temp_i = i;
+				}
+			}
+			//(machine->pageTable[temp_i]).physicalPage = temp_i;
+			printf("virtual page %d is writen back to the disk and physical page %d is free\n", (machine->pageTable[temp_i]).virtualPage, (machine->pageTable[temp_i]).physicalPage);
+			machine->disk->WriteAt(&(machine->mainMemory[(machine->pageTable[temp_i]).physicalPage*PageSize]), 128, (machine->pageTable[temp_i]).virtualPage*PageSize);
+			(machine->pageTable[temp_i]).tid = currentThread->gettid();
+			(machine->pageTable[temp_i]).virtualPage = vpn;
+			(machine->pageTable[temp_i]).valid = TRUE;
+		}
+
+		printf("physical page %d is distributed to virtual page %d\n", (machine->pageTable[temp_i]).physicalPage, vpn);
+		machine->disk->ReadAt(&(machine->mainMemory[(machine->pageTable[temp_i]).physicalPage*PageSize]), 128, vpn*PageSize);
+		//machine->diskPos += 128;
 }

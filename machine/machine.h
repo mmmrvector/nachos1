@@ -25,14 +25,14 @@
 #include "utility.h"
 #include "translate.h"
 #include "disk.h"
-
+#include "openfile.h"
 // Definitions related to the size, and format of user memory
 
 #define PageSize 	SectorSize 	// set the page size equal to
 					// the disk sector size, for
 					// simplicity
 
-#define NumPhysPages    1024
+#define NumPhysPages    16
 #define MemorySize 	(NumPhysPages * PageSize)
 #define TLBSize		4		// if there is a TLB, make it small
 
@@ -92,6 +92,9 @@ class Instruction {
                      // Immediates are sign-extended.
 };
 
+
+
+
 // The following class defines the simulated host workstation hardware, as 
 // seen by user programs -- the CPU registers, main memory, etc.
 // User programs shouldn't be able to tell that they are running on our 
@@ -120,8 +123,11 @@ class Machine {
 				// store a value into a CPU register
 	int flag;
 	int tlbmiss;
+	int pagemiss;
 	int lasttime[4];
+	int pageLasttime[32];
 	int tlbhit;
+	int pagehit;
 // Routines internal to the machine simulation -- DO NOT call these 
 
     void OneInstruction(Instruction *instr); 	
@@ -141,14 +147,14 @@ class Machine {
 				// the translation entry appropriately,
     				// and return an exception code if the 
 				// translation couldn't be completed.
-
+	void LRU();
     void RaiseException(ExceptionType which, int badVAddr);
 				// Trap to the Nachos kernel, because of a
 				// system call or other exception.  
 
     void Debugger();		// invoke the user program debugger
     void DumpState();		// print the user CPU and memory state 
-
+	
 
 // Data structures -- all of these are accessible to Nachos kernel code.
 // "public" for convenience.
@@ -156,6 +162,8 @@ class Machine {
 // Note that *all* communication between the user program and the kernel 
 // are in terms of these data structures.
 
+	OpenFile *disk;
+	int diskPos;
     char *mainMemory;		// physical memory to store user program,
 				// code and data, while executing
     int registers[NumTotalRegs]; // CPU registers, for executing user programs
@@ -181,10 +189,10 @@ class Machine {
 
     TranslationEntry *tlb;		// this pointer should be considered 
 					// "read-only" to Nachos kernel code
-
+	
     TranslationEntry *pageTable;
     unsigned int pageTableSize;
-
+	InvertedPageTableEntry *invertedPageTable;
   private:
     bool singleStep;		// drop back into the debugger after each
 				// simulated instruction

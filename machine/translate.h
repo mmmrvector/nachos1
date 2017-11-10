@@ -40,6 +40,16 @@ class TranslationEntry {
 			// page is referenced or modified.
     bool dirty;         // This bit is set by the hardware every time the
 			// page is modified.
+	int tid;
 };
 
 #endif
+class InvertedPageTableEntry
+{
+public:
+	int vpn;//virtual page number
+	int tid;//thread id
+	bool dirty;//dirty bit
+	bool valid;//valid bit
+	bool readOnly;//readonly bit
+};
