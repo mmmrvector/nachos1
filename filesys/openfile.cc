@@ -31,6 +31,11 @@ OpenFile::OpenFile(int sector)
 { 
     hdr = new FileHeader;
     hdr->FetchFrom(sector);
+    //printf("open\n");
+    //printf("lastVisitTime addr:%x\n", &(hdr->lastVisitTime));
+
+    time(&(hdr->lastVisitTime));
+    //printf("lastVisitTime:%s\n", ctime(&(hdr->lastVisitTime)));
     seekPosition = 0;
 }
 
@@ -116,6 +121,10 @@ OpenFile::Write(char *into, int numBytes)
 int
 OpenFile::ReadAt(char *into, int numBytes, int position)
 {
+    //modify time
+    //printf("read\n");
+    time(&(hdr->lastVisitTime));
+    //printf("lastVisitTime:%d\n", hdr->lastVisitTime);
     int fileLength = hdr->FileLength();
     int i, firstSector, lastSector, numSectors;
     char *buf;
@@ -146,6 +155,12 @@ OpenFile::ReadAt(char *into, int numBytes, int position)
 int
 OpenFile::WriteAt(char *from, int numBytes, int position)
 {
+    //modify time
+    //printf("write\n");
+    time(&(hdr->lastVisitTime));
+    time(&(hdr->lastWriteTime));
+    //printf("lastVisitTime:%d  lastWriteTime:%d\n", hdr->lastVisitTime, hdr->lastWriteTime);
+
     int fileLength = hdr->FileLength();
     int i, firstSector, lastSector, numSectors;
     bool firstAligned, lastAligned;

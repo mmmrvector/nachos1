@@ -99,8 +99,13 @@ Machine::Machine(bool debug)
 		invertedPageTable[i].readOnly = FALSE;
 	}
 	*/
+/*
+printf("try to open disk\n");
+	bool succ = fileSystem->Create("disk",100);
+printf("succ:%d\n", succ);
 	disk = fileSystem->Open("disk");
 	diskPos = 0;
+*/
     singleStep = debug;
     CheckEndian();
 }

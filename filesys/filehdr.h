@@ -16,7 +16,7 @@
 
 #include "disk.h"
 #include "bitmap.h"
-
+#include <time.h>
 #define NumDirect 	((SectorSize - 2 * sizeof(int)) / sizeof(int))
 #define MaxFileSize 	(NumDirect * SectorSize)
 
@@ -37,7 +37,7 @@
 
 class FileHeader {
   public:
-    bool Allocate(BitMap *bitMap, int fileSize);// Initialize a file header, 
+    bool Allocate(BitMap *bitMap, int fileSize, int fileType);// Initialize a file header, 
 						//  including allocating space 
 						//  on disk for the file data
     void Deallocate(BitMap *bitMap);  		// De-allocate this file's 
@@ -56,11 +56,17 @@ class FileHeader {
 
     void Print();			// Print the contents of the file.
 
+    time_t createTime; // time ticks when the file create
+    time_t lastVisitTime; // last time ticks when visiting the file
+    time_t lastWriteTime;//last time ticks when writing the file
+    int fileType; // file type 0-file 1-directory
   private:
     int numBytes;			// Number of bytes in the file
     int numSectors;			// Number of data sectors in the file
     int dataSectors[NumDirect];		// Disk sector numbers for each data 
 					// block in the file
+
+    
 };
 
 #endif // FILEHDR_H

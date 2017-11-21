@@ -87,9 +87,10 @@ int main(int argc, char **argv)
     (void) Initialize(argc, argv);
     
     Printhello();
-
+int temp_argc = argc;
 
 #ifdef THREADS
+	//printf("argv:%x\n", argv);
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
       argCount = 1;
       switch (argv[0][1]) {
@@ -102,11 +103,12 @@ int main(int argc, char **argv)
         break;
       }
     }
-	//Vector
-	testnum = 2;
-    ThreadTest();
+	
+	testnum = 1;
+    //ThreadTest();
 #endif
-
+		//argv -= argCount;
+		argc = temp_argc;
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
 	argCount = 1;
         if (!strcmp(*argv, "-z"))               // print copyright
@@ -127,9 +129,11 @@ int main(int argc, char **argv)
 	    interrupt->Halt();		// once we start the console, then 
 					// Nachos will loop forever waiting 
 					// for console input
-	}
+		}
 #endif // USER_PROGRAM
+
 #ifdef FILESYS
+	
 	if (!strcmp(*argv, "-cp")) { 		// copy from UNIX to Nachos
 	    ASSERT(argc > 2);
 	    Copy(*(argv + 1), *(argv + 2));
@@ -148,6 +152,7 @@ int main(int argc, char **argv)
             fileSystem->Print();
 	} else if (!strcmp(*argv, "-t")) {	// performance test
             PerformanceTest();
+           // PerformanceTest();
 	}
 #endif // FILESYS
 #ifdef NETWORK

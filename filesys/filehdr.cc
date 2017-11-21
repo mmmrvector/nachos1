@@ -26,7 +26,7 @@
 
 #include "system.h"
 #include "filehdr.h"
-
+#include <time.h>
 //----------------------------------------------------------------------
 // FileHeader::Allocate
 // 	Initialize a fresh file header for a newly created file.
@@ -39,15 +39,21 @@
 //----------------------------------------------------------------------
 
 bool
-FileHeader::Allocate(BitMap *freeMap, int fileSize)
+FileHeader::Allocate(BitMap *freeMap, int fileSize, int _fileType)
 { 
+    //printf("get in hdr allocate\n");
     numBytes = fileSize;
     numSectors  = divRoundUp(fileSize, SectorSize);
+    fileType = _fileType;
+    createTime = time(NULL);
+   // lastVisitTime = createTime;
+    //lastWriteTime = createTime;
     if (freeMap->NumClear() < numSectors)
 	return FALSE;		// not enough space
 
     for (int i = 0; i < numSectors; i++)
 	dataSectors[i] = freeMap->Find();
+    //freeMap->Print();
     return TRUE;
 }
 
@@ -132,7 +138,7 @@ FileHeader::Print()
     int i, j, k;
     char *data = new char[SectorSize];
 
-    printf("FileHeader contents.  File size: %d.  File blocks:\n", numBytes);
+    printf("FileHeader contents.  File type: %d. Create time: %s. Last visit time: %s. Last modify time: %s. File size: %d.  File blocks:\n", fileType, ctime(&(createTime)), ctime(&(lastVisitTime)), ctime(&(lastWriteTime)), numBytes);
     for (i = 0; i < numSectors; i++)
 	printf("%d ", dataSectors[i]);
     printf("\nFile contents:\n");

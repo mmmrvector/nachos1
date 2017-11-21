@@ -137,8 +137,6 @@ class Condition {
 	List *queue;
     // plus some other stuff you'll need to define
 };
-#endif // SYNCH_H
-
 class RWLock{
 	public:
 	RWLock(char *debugName);
@@ -153,3 +151,6 @@ class RWLock{
 	Semaphore *wrlock;
 	int readers;
 };
+#endif // SYNCH_H
+
+

@@ -41,6 +41,11 @@ Directory::Directory(int size)
     tableSize = size;
     for (int i = 0; i < tableSize; i++)
 	table[i].inUse = FALSE;
+    FileHeader *dirHdr = new FileHeader;
+    dirHdr->FetchFrom(1);
+    dirHdr->lastVisitTime = time(NULL);
+    //printf("tt:%s\n", ctime(&(dirHdr->lastVisitTime)));
+    dirHdr->WriteBack(1);
 }
 
 //----------------------------------------------------------------------
@@ -91,8 +96,12 @@ int
 Directory::FindIndex(char *name)
 {
     for (int i = 0; i < tableSize; i++)
-        if (table[i].inUse && !strncmp(table[i].name, name, FileNameMaxLen))
-	    return i;
+    {
+        //if (table[i].inUse && !strncmp(table[i].name, name, FileNameMaxLen))
+       // printf("inUse:%d  table[%d].name:%s\n", table[i].inUse, i, table[i].name);
+        if (table[i].inUse && table[i].name!=NULL &&!strcmp(table[i].name, name))
+	       return i;
+    }
     return -1;		// name not in directory
 }
 
@@ -109,9 +118,9 @@ int
 Directory::Find(char *name)
 {
     int i = FindIndex(name);
-
     if (i != -1)
-	return table[i].sector;
+	   return table[i].sector;
+
     return -1;
 }
 
@@ -135,7 +144,12 @@ Directory::Add(char *name, int newSector)
     for (int i = 0; i < tableSize; i++)
         if (!table[i].inUse) {
             table[i].inUse = TRUE;
-            strncpy(table[i].name, name, FileNameMaxLen); 
+            //strncpy(table[i].name, name, FileNameMaxLen); 
+            //strcpy(table[i].name, name);
+           // printf("strlen:%d\n", strlen(name));
+            table[i].name = new char [strlen(name)];
+            strcpy(table[i].name, name);
+            //printf("table[%d].name:%s name: %s\n", i, table[i].name, name);
             table[i].sector = newSector;
         return TRUE;
 	}
