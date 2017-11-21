@@ -41,19 +41,41 @@
 bool
 FileHeader::Allocate(BitMap *freeMap, int fileSize, int _fileType)
 { 
-    //printf("get in hdr allocate\n");
+
     numBytes = fileSize;
     numSectors  = divRoundUp(fileSize, SectorSize);
     fileType = _fileType;
     createTime = time(NULL);
-   // lastVisitTime = createTime;
-    //lastWriteTime = createTime;
     if (freeMap->NumClear() < numSectors)
 	return FALSE;		// not enough space
-
+    /*
     for (int i = 0; i < numSectors; i++)
 	dataSectors[i] = freeMap->Find();
-    //freeMap->Print();
+    */
+    int numPrimaryIndexTableEntries = divRoundUp(numSectors, 32);
+    int tempNumSectors = numSectors;
+
+    for(int i = 0; i < numPrimaryIndexTableEntries; i ++)
+    {
+        //allocate second-level index table
+        primaryIndexTable[i] = freeMap->Find();
+        int tempDataSectors[32];
+        if(tempNumSectors < 32)
+        {
+            for(int j = 0; j < tempNumSectors; j ++)
+                tempDataSectors[j] = freeMap->Find();
+        }
+        else
+        {
+            for(int j = 0; j < 32; j ++)
+            {
+                tempDataSectors[j] = freeMap->Find();
+            }
+            tempNumSectors -= 32;
+        }
+        synchDisk->WriteSector(primaryIndexTable[i], (char *)tempDataSectors);
+    }
+
     return TRUE;
 }
 
@@ -67,10 +89,39 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize, int _fileType)
 void 
 FileHeader::Deallocate(BitMap *freeMap)
 {
-    for (int i = 0; i < numSectors; i++) {
-	ASSERT(freeMap->Test((int) dataSectors[i]));  // ought to be marked!
-	freeMap->Clear((int) dataSectors[i]);
+    //printf("get into Deallocate\n");
+    //printf("numsectors:%d\n", numSectors);
+    int tempNumSectors = numSectors;
+    int numPrimaryIndexTableEntries = divRoundUp(numSectors,32);
+    //printf("tempNumSectors:%d\n", tempNumSectors);
+    //printf("numPrimaryIndexTableEntries:%d\n", numPrimaryIndexTableEntries);
+    for (int i = 0; i < numPrimaryIndexTableEntries; i++) {
+	ASSERT(freeMap->Test((int) primaryIndexTable[i]));  // ought to be marked!
+    int tempDataSectors[32];
+    synchDisk->ReadSector(primaryIndexTable[i], (char*)tempDataSectors);
+    if(tempNumSectors < 32)
+    {
+
+        for(int j = 0; j < tempNumSectors; j ++)
+        {
+            freeMap->Clear((int)tempDataSectors[j]);
+            //printf("dataSector:%d\n", tempDataSectors[j]);
+        }
     }
+    else
+    {
+        for(int j = 0; j < 32; j ++)
+        {
+            freeMap->Clear((int)tempDataSectors[j]);
+        }
+        tempNumSectors -= 32;
+    }
+
+    freeMap->Clear((int) primaryIndexTable[i]);
+    }
+    
+    //printf("try to clear free map\n");
+    //freeMap->Print();
 }
 
 //----------------------------------------------------------------------
@@ -83,7 +134,9 @@ FileHeader::Deallocate(BitMap *freeMap)
 void
 FileHeader::FetchFrom(int sector)
 {
+    //printf("FetchFrom sector:%d\n", sector);
     synchDisk->ReadSector(sector, (char *)this);
+   // printf("3\n");
 }
 
 //----------------------------------------------------------------------
@@ -112,7 +165,14 @@ FileHeader::WriteBack(int sector)
 int
 FileHeader::ByteToSector(int offset)
 {
-    return(dataSectors[offset / SectorSize]);
+    //which entry in primary index table
+    int i = offset/(SectorSize*32);
+    int i_offset = offset % (SectorSize*32);
+    i_offset = i_offset / SectorSize;
+    int tempDataSectors[32];
+    synchDisk->ReadSector(primaryIndexTable[i], (char*)tempDataSectors);
+    return(tempDataSectors[i_offset]);
+    //return(dataSectors[offset / SectorSize]);
 }
 
 //----------------------------------------------------------------------
@@ -136,21 +196,52 @@ void
 FileHeader::Print()
 {
     int i, j, k;
+    int tempDataSectors[32];
     char *data = new char[SectorSize];
+    int numPrimaryIndexTableEntries = divRoundUp(numSectors, 32);
+    int tempNumSectors = numSectors;
 
-    printf("FileHeader contents.  File type: %d. Create time: %s. Last visit time: %s. Last modify time: %s. File size: %d.  File blocks:\n", fileType, ctime(&(createTime)), ctime(&(lastVisitTime)), ctime(&(lastWriteTime)), numBytes);
-    for (i = 0; i < numSectors; i++)
-	printf("%d ", dataSectors[i]);
+    printf("FileHeader contents.\nFile type: %d\nCreate time: %sLast visit time: %sLast modify time: %sFile size: %d\nFile blocks:\n", fileType, ctime(&(createTime)), ctime(&(lastVisitTime)), ctime(&(lastWriteTime)), numBytes);
+    for (i = 0; i < numPrimaryIndexTableEntries; i++)
+	printf("%d ", primaryIndexTable[i]);
+    
     printf("\nFile contents:\n");
-    for (i = k = 0; i < numSectors; i++) {
-	synchDisk->ReadSector(dataSectors[i], data);
-        for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++) {
-	    if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
-		printf("%c", data[j]);
-            else
-		printf("\\%x", (unsigned char)data[j]);
-	}
+
+
+    for (i = k = 0; i < numPrimaryIndexTableEntries; i++) {
+        synchDisk->ReadSector(primaryIndexTable[i], (char*)tempDataSectors);
+        
+        if(tempNumSectors < 32)
+        {
+            for(int m = 0; m < tempNumSectors; m ++)
+            {
+        	    synchDisk->ReadSector(tempDataSectors[m], data);
+                for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++) {
+        	    if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
+        		   printf("%c", data[j]);
+                else
+        		   printf("\\%x", (unsigned char)data[j]);
+        	   }
+
+            
+            }
+        }
+        else
+        {
+            for(int m = 0; m < 32; m ++)
+            {
+                synchDisk->ReadSector(tempDataSectors[m], data);
+                for (j = 0; (j < SectorSize) && (k < numBytes); j++, k++) {
+                if ('\040' <= data[j] && data[j] <= '\176')   // isprint(data[j])
+                    printf("%c", data[j]);
+                else
+                    printf("\\%x", (unsigned char)data[j]);
+               }
+
+            }
+        }
         printf("\n"); 
     }
     delete [] data;
+
 }

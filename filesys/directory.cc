@@ -117,6 +117,7 @@ Directory::FindIndex(char *name)
 int
 Directory::Find(char *name)
 {
+    
     int i = FindIndex(name);
     if (i != -1)
 	   return table[i].sector;
@@ -172,6 +173,7 @@ Directory::Remove(char *name)
     if (i == -1)
 	return FALSE; 		// name not in directory
     table[i].inUse = FALSE;
+    table[i].name = NULL;
     return TRUE;	
 }
 

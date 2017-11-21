@@ -79,20 +79,20 @@
 
 FileSystem::FileSystem(bool format)
 { 
+    //printf("initialize\n");
     DEBUG('f', "Initializing the file system.\n");
     if (format) {
+
         BitMap *freeMap = new BitMap(NumSectors);
         Directory *directory = new Directory(NumDirEntries);
-	FileHeader *mapHdr = new FileHeader;
-	FileHeader *dirHdr = new FileHeader;
+	    FileHeader *mapHdr = new FileHeader;
+	    FileHeader *dirHdr = new FileHeader;
 
         DEBUG('f', "Formatting the file system.\n");
-
     // First, allocate space for FileHeaders for the directory and bitmap
     // (make sure no one else grabs these!)
 	freeMap->Mark(FreeMapSector);	    
 	freeMap->Mark(DirectorySector);
-
     // Second, allocate space for the data blocks containing the contents
     // of the directory and bitmap files.  There better be enough space!
 
@@ -199,6 +199,7 @@ FileSystem::Create(char *name, int initialSize, int fileType)
 
         freeMap = new BitMap(NumSectors);
         freeMap->FetchFrom(freeMapFile);
+        freeMap->Print();
        // mapHdr->lastVisitTime = time(NULL);
         sector = freeMap->Find();	// find a sector to hold the file header
         //printf("filesystem create: sector: %d\n", sector);
@@ -285,6 +286,7 @@ FileSystem::Remove(char *name)
     directory = new Directory(NumDirEntries);
     directory->FetchFrom(directoryFile);
     sector = directory->Find(name);
+    //printf("file sector:%d\n", sector);
     if (sector == -1) {
        delete directory;
        return FALSE;			 // file not found 
@@ -341,19 +343,21 @@ FileSystem::Print()
     Directory *directory = new Directory(NumDirEntries);
 
     printf("Bit map file header:\n");
+    printf("-----------------------------------------\n");
     bitHdr->FetchFrom(FreeMapSector);
     bitHdr->Print();
-
+    printf("-----------------------------------------\n");
     printf("Directory file header:\n");
+    printf("-----------------------------------------\n");
     dirHdr->FetchFrom(DirectorySector);
     dirHdr->Print();
-
+    printf("-----------------------------------------\n");
     freeMap->FetchFrom(freeMapFile);
     freeMap->Print();
-
+    printf("-----------------------------------------\n");
     directory->FetchFrom(directoryFile);
     directory->Print();
-
+    printf("-----------------------------------------\n");
     delete bitHdr;
     delete dirHdr;
     delete freeMap;

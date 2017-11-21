@@ -115,21 +115,23 @@ PrintSector (bool writing, int sector, char *data)
 void
 Disk::ReadRequest(int sectorNumber, char* data)
 {
+    //printf("get into ReadRequest\n");
     int ticks = ComputeLatency(sectorNumber, FALSE);
 
     ASSERT(!active);				// only one request at a time
     ASSERT((sectorNumber >= 0) && (sectorNumber < NumSectors));
-    
     DEBUG('d', "Reading from sector %d\n", sectorNumber);
     Lseek(fileno, SectorSize * sectorNumber + MagicSize, 0);
     Read(fileno, data, SectorSize);
     if (DebugIsEnabled('d'))
 	PrintSector(FALSE, sectorNumber, data);
-    
+  
     active = TRUE;
     UpdateLast(sectorNumber);
+
     stats->numDiskReads++;
     interrupt->Schedule(DiskDone, (int) this, ticks, DiskInt);
+
 }
 
 void

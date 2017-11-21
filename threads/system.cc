@@ -168,13 +168,13 @@ Initialize(int argc, char **argv)
 #endif
 
 #ifdef FILESYS
-	
     synchDisk = new SynchDisk("DISK");
 	
 #endif
 
 #ifdef FILESYS_NEEDED
     fileSystem = new FileSystem(format);
+
 #endif
 
 #ifdef NETWORK

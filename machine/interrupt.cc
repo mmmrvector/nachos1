@@ -275,11 +275,11 @@ Interrupt::Schedule(VoidFunctionPtr handler, int arg, int fromNow, IntType type)
 {
     int when = stats->totalTicks + fromNow;
     PendingInterrupt *toOccur = new PendingInterrupt(handler, arg, when, type);
-
     DEBUG('i', "Scheduling interrupt handler the %s at time = %d\n", 
 					intTypeNames[type], when);
+ 
     ASSERT(fromNow > 0);
-
+    
     pending->SortedInsert(toOccur, when);
 }
 
