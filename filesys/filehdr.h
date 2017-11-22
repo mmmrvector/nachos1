@@ -60,12 +60,14 @@ class FileHeader {
     time_t lastVisitTime; // last time ticks when visiting the file
     time_t lastWriteTime;//last time ticks when writing the file
     int fileType; // file type 0-file 1-directory
+    int primaryIndexTable[NumDirect];
   private:
     int numBytes;			// Number of bytes in the file
     int numSectors;			// Number of data sectors in the file
     //int dataSectors[NumDirect];		// Disk sector numbers for each data 
 					// block in the file
-    int primaryIndexTable[NumDirect];
+
+    
     
 };
 

@@ -170,6 +170,7 @@ FileHeader::ByteToSector(int offset)
     int i_offset = offset % (SectorSize*32);
     i_offset = i_offset / SectorSize;
     int tempDataSectors[32];
+//    printf("primTable[%d]:%d\n",i, primaryIndexTable[i]);
     synchDisk->ReadSector(primaryIndexTable[i], (char*)tempDataSectors);
     return(tempDataSectors[i_offset]);
     //return(dataSectors[offset / SectorSize]);

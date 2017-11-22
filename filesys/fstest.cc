@@ -108,7 +108,7 @@ Print(char *name)
 //	  PerformanceTest -- overall control, and print out performance #'s
 //----------------------------------------------------------------------
 
-#define FileName 	"TestFile1"
+#define FileName 	"root/A/TestFile"
 #define Contents 	"1234567890"
 #define ContentSize 	strlen(Contents)
 #define FileSize 	((int)(ContentSize * 10))
@@ -121,7 +121,7 @@ FileWrite()
 
     printf("Sequential write of %d byte file, in %d byte chunks\n", 
 	FileSize, ContentSize);
-    if (!fileSystem->Create(FileName, 300, 0)) {
+    if (!fileSystem->Create(FileName, 100, 0)) {
       printf("Perf test: can't create %s\n", FileName);
       return;
     }
@@ -174,17 +174,25 @@ PerformanceTest()
 {
     printf("Starting file system performance test:\n");
    // stats->Print();
+    printf("-----------------------------------------\n");
+    //fileSystem->Print();
+    printf("-----------------------------------------\n");  
+    fileSystem->Create("root/A", 100, 1);
+    fileSystem->Create("root/A/B", 100, 1);
+    fileSystem->Create("root/A/B/C", 100, 1);
+    fileSystem->Create("root/A/B/D", 100, 0);
+    fileSystem->Create("root/E", 100, 1);
     FileWrite();
     FileRead();
-    printf("-----------------------------------------\n");
-    fileSystem->Print();
-    printf("-----------------------------------------\n");  
+
     
     if (!fileSystem->Remove(FileName)) {
       printf("Perf test: unable to remove %s\n", FileName);
       return;
     }
-    
+    fileSystem->Remove("root/A");
+    printf("all delete\n");
+
     //stats->Print();
 }
 

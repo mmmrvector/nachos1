@@ -35,7 +35,7 @@ class DirectoryEntry {
     int sector;				// Location on disk to find the 
 					//   FileHeader for this file 
     //char name[FileNameMaxLen + 1];	// Text name for file, with +1 for 
-	char *name;				// the trailing '\0'
+	char *name;				// the trailing '\0' 
 };
 
 // The following class defines a UNIX-like "directory".  Each entry in
@@ -70,10 +70,11 @@ class Directory {
     void Print();			// Verbose print of the contents
 					//  of the directory -- all the file
 					//  names and their contents.
+    DirectoryEntry *table;      // Table of pairs: 
+        int tableSize;          // Number of directory entries
 
   private:
-    int tableSize;			// Number of directory entries
-    DirectoryEntry *table;		// Table of pairs: 
+    
 					// <file name, file header location> 
 
     int FindIndex(char *name);		// Find the index into the directory 
