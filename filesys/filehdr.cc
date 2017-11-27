@@ -79,6 +79,85 @@ FileHeader::Allocate(BitMap *freeMap, int fileSize, int _fileType)
     return TRUE;
 }
 
+
+bool
+FileHeader::ExtendAllocate(BitMap *freeMap, int extraFileSize)
+{
+    
+    if(divRoundUp(numBytes + extraFileSize, SectorSize) <= numSectors)
+    {
+        //printf("do not need more sector\n");
+        numBytes += extraFileSize;
+        return true;
+    }
+    printf("try to allocate more sectors\n");
+    numBytes = numBytes + extraFileSize;
+    int extraSectors  = divRoundUp(extraFileSize, SectorSize);
+    
+    if (freeMap->NumClear() < extraSectors)
+    return FALSE;       // not enough space
+    /*
+    for (int i = 0; i < numSectors; i++)
+    dataSectors[i] = freeMap->Find();
+    */
+    int initialPrimarytableEntries = divRoundUp(numSectors, 32);
+    int initialNumSectors = numSectors;
+
+
+    int numPrimaryIndexTableEntries =divRoundUp(extraSectors + numSectors, 32);
+    int tempNumSectors = extraSectors;
+    //initial primary table still hava empty position
+    if(initialNumSectors % 32 != 0)
+    {
+
+        int tempDataSectors[32];
+        synchDisk->ReadSector(primaryIndexTable[initialPrimarytableEntries - 1], (char*)tempDataSectors);
+        if(tempNumSectors >= 32 - (initialNumSectors % 32))
+        {
+            for(int i = initialNumSectors % 32; i < 32; i ++)
+            {
+                tempDataSectors[i] = freeMap->Find();
+            }
+            tempNumSectors = tempNumSectors - (32 - (initialNumSectors % 32));
+        }
+        else
+        {
+            for(int i = initialNumSectors % 32; i < (initialNumSectors % 32) + tempNumSectors; i ++)
+            {
+                tempDataSectors[i] = freeMap->Find();
+            }
+        }
+        synchDisk->WriteSector(primaryIndexTable[initialPrimarytableEntries - 1], (char *)tempDataSectors);
+    }
+
+    for(int i = initialPrimarytableEntries; i < numPrimaryIndexTableEntries; i ++)
+    {
+        //allocate second-level index table
+        primaryIndexTable[i] = freeMap->Find();
+        int tempDataSectors[32];
+        if(tempNumSectors < 32)
+        {
+            for(int j = 0; j < tempNumSectors; j ++)
+            {
+                tempDataSectors[j] = freeMap->Find();
+                //printf("dataSector:%d\n", tempDataSectors[j]);
+            }
+        }
+        else
+        {
+            for(int j = 0; j < 32; j ++)
+            {
+                tempDataSectors[j] = freeMap->Find();
+            }
+            tempNumSectors -= 32;
+        }
+        synchDisk->WriteSector(primaryIndexTable[i], (char *)tempDataSectors);
+    }
+    numSectors = numSectors + extraSectors;
+    printf("current sectors:%d  current bytes:%d\n", numSectors, numBytes);
+
+    return TRUE;
+}
 //----------------------------------------------------------------------
 // FileHeader::Deallocate
 // 	De-allocate all the space allocated for data blocks for this file.
@@ -105,7 +184,7 @@ FileHeader::Deallocate(BitMap *freeMap)
         for(int j = 0; j < tempNumSectors; j ++)
         {
             freeMap->Clear((int)tempDataSectors[j]);
-            //printf("dataSector:%d\n", tempDataSectors[j]);
+            
         }
     }
     else
@@ -170,7 +249,7 @@ FileHeader::ByteToSector(int offset)
     int i_offset = offset % (SectorSize*32);
     i_offset = i_offset / SectorSize;
     int tempDataSectors[32];
-//    printf("primTable[%d]:%d\n",i, primaryIndexTable[i]);
+    //printf("primTable[%d]:%d\n",i, primaryIndexTable[i]);
     synchDisk->ReadSector(primaryIndexTable[i], (char*)tempDataSectors);
     return(tempDataSectors[i_offset]);
     //return(dataSectors[offset / SectorSize]);
@@ -211,7 +290,7 @@ FileHeader::Print()
 
     for (i = k = 0; i < numPrimaryIndexTableEntries; i++) {
         synchDisk->ReadSector(primaryIndexTable[i], (char*)tempDataSectors);
-        
+        //printf("tempDataSectors[0]:%d tempDataSectors[1]:%d\n", tempDataSectors[0], tempDataSectors[1]);
         if(tempNumSectors < 32)
         {
             for(int m = 0; m < tempNumSectors; m ++)

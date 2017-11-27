@@ -40,6 +40,8 @@ class FileHeader {
     bool Allocate(BitMap *bitMap, int fileSize, int fileType);// Initialize a file header, 
 						//  including allocating space 
 						//  on disk for the file data
+    bool ExtendAllocate(BitMap *bitMap, int extraFileSize);
+
     void Deallocate(BitMap *bitMap);  		// De-allocate this file's 
 						//  data blocks
 

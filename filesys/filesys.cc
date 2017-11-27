@@ -180,7 +180,7 @@ FileSystem::FileSystem(bool format)
 bool
 FileSystem::Create(char *Name, int initialSize, int fileType)
 {
-
+    //printf("root addr:%x\n", directoryFile);
     char * name = new char[strlen(Name)];
     strcpy(name, Name);
     Directory *directory;
@@ -252,11 +252,12 @@ FileSystem::Create(char *Name, int initialSize, int fileType)
                 //printf("root primtable:%d\n",( currDirectoryFile->hdr->primaryIndexTable)[0]);
                 //Directory *root = new Directory(NumDirEntries);
                 //delete rootFile;
+                //printf("curDir:%x\n", currDirectoryFile);
     	    	directory->WriteBack(currDirectoryFile);
                 directory->FetchFrom(currDirectoryFile);
-                //directory->List();
+                directory->List();
     	    	freeMap->WriteBack(freeMapFile);
-                //directory->Print();
+               // directory->Print();
 	        }
             delete hdr;
 	    }

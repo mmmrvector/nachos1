@@ -31,6 +31,7 @@ OpenFile::OpenFile(int sector)
 { 
     hdr = new FileHeader;
     hdr->FetchFrom(sector);
+    hdrSectorNumber = sector;
     //printf("open sector:%d\n", sector);
     //printf("lastVisitTime addr:%x\n", &(hdr->lastVisitTime));
 
@@ -166,16 +167,32 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
     bool firstAligned, lastAligned;
     char *buf;
 
-    if ((numBytes <= 0) || (position >= fileLength))
+    if ((numBytes <= 0))
 	return 0;				// check request
     if ((position + numBytes) > fileLength)
-	numBytes = fileLength - position;
+    {
+        int extraFileLength = numBytes + position - fileLength;
+        int extraSectors = divRoundUp(extraFileLength, SectorSize);
+        BitMap *freeMap = new BitMap(NumSectors);
+        OpenFile *freeMapFile = new OpenFile(0);
+        freeMap->FetchFrom(freeMapFile);
+        if(!hdr->ExtendAllocate(freeMap, extraFileLength))
+        {
+            printf("extend allocate failed\n");
+            return 0;
+        }
+        //need to write back header
+       // printf("hdr sector number:%d\n", hdrSectorNumber);
+        hdr->WriteBack(hdrSectorNumber);
+        delete freeMap;
+        delete freeMapFile;
+    }
     DEBUG('f', "Writing %d bytes at %d, from file of length %d.\n", 	
 			numBytes, position, fileLength);
    // printf("num  bytes:%d\n", numBytes);
     firstSector = divRoundDown(position, SectorSize);
     lastSector = divRoundDown(position + numBytes - 1, SectorSize);
-   // printf("firstSector:%d lastSector:%d hdr->:%d\n", firstSector, lastSector, hdr->ByteToSector(0 * SectorSize));
+    //printf("firstSector:%d lastSector:%d hdr->:%d\n", firstSector, lastSector, hdr->ByteToSector(0 * SectorSize));
     numSectors = 1 + lastSector - firstSector;
 
     buf = new char[numSectors * SectorSize];
@@ -195,8 +212,11 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
     //printf("hdr->b2s:%d\n", hdr->ByteToSector(0));
 // write modified sectors back
     for (i = firstSector; i <= lastSector; i++)	
+    {
+        //printf("article sector:%d\n",hdr->ByteToSector(i * SectorSize) );
         synchDisk->WriteSector(hdr->ByteToSector(i * SectorSize), 
 					&buf[(i - firstSector) * SectorSize]);
+    }
     delete [] buf;
     return numBytes;
 }

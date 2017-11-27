@@ -117,7 +117,7 @@ Disk::ReadRequest(int sectorNumber, char* data)
 {
     //printf("get into ReadRequest\n");
     int ticks = ComputeLatency(sectorNumber, FALSE);
-
+    //printf("sectorNumber:%d  NumSectors:%d\n", sectorNumber, NumSectors);
     ASSERT(!active);				// only one request at a time
     ASSERT((sectorNumber >= 0) && (sectorNumber < NumSectors));
     DEBUG('d', "Reading from sector %d\n", sectorNumber);
