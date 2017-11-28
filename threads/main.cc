@@ -89,7 +89,7 @@ int main(int argc, char **argv)
     Printhello();
 int temp_argc = argc;
 
-#ifdef THREADS
+/*#ifdef THREADS
 	//printf("argv:%x\n", argv);
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {
       argCount = 1;
@@ -107,6 +107,7 @@ int temp_argc = argc;
 	testnum = 1;
     //ThreadTest();
 #endif
+*/
 		//argv -= argCount;
 		argc = temp_argc;
     for (argc--, argv++; argc > 0; argc -= argCount, argv += argCount) {

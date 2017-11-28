@@ -1,0 +1,75 @@
+bit map writeback
+hello world
+Starting file system performance test:
+-----------------------------------------
+-----------------------------------------
+Sequential write of 200 byte file, in 10 byte chunks
+TestFile
+bit map writeback
+try to allocate more sectors
+current sectors:2  current bytes:130
+Sequential read of 200 byte file, in 10 byte chunks
+Bit map file header:
+-----------------------------------------
+FileHeader contents.
+File type: 1
+Create time: Mon Nov 27 09:27:27 2017
+Last visit time: Mon Nov 27 09:27:27 2017
+Last modify time: Mon Nov 27 09:27:27 2017
+File size: 128
+File blocks:
+2 
+File contents:
+\ff\1\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0
+-----------------------------------------
+Directory file header:
+-----------------------------------------
+FileHeader contents.
+File type: 1
+Create time: Mon Nov 27 09:27:27 2017
+Last visit time: Mon Nov 27 09:27:27 2017
+Last modify time: Mon Nov 27 09:27:27 2017
+File size: 120
+File blocks:
+4 
+File contents:
+\1\0\0\0\6\0\0\0\f8\982\9\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0
+-----------------------------------------
+Bitmap set:
+0, 1, 2, 3, 4, 5, 6, 7, 8, 
+-----------------------------------------
+Directory contents:
+Name: TestFile, Sector: 6
+FileHeader contents.
+File type: 0
+Create time: Mon Nov 27 09:27:27 2017
+Last visit time: Mon Nov 27 09:27:27 2017
+Last modify time: Mon Nov 27 09:27:27 2017
+File size: 200
+File blocks:
+7 
+File contents:
+12345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890123456789012345678901234567890
+
+-----------------------------------------
+file visit num:2
+remove failed
+file visit num:1
+bit map writeback
+Bitmap set:
+0, 1, 2, 3, 4, 5, 
+all delete
+No threads ready or runnable, and no pending interrupts.
+Assuming the program completed.
+Machine halting!
+
+page hit:0
+page miss:0
+rate:-nan
+Ticks: total 1539560, idle 1514120, system 25440, user 0
+Disk I/O: reads 533, writes 94
+Console I/O: reads 0, writes 0
+Paging: faults 0
+Network I/O: packets received 0, sent 0
+
+Cleaning up...

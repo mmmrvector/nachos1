@@ -80,6 +80,7 @@
 FileSystem::FileSystem(bool format)
 { 
     //printf("initialize\n");
+    //mutex = new Semaphore("mutex", 1);
     DEBUG('f', "Initializing the file system.\n");
     if (format) {
 
@@ -95,9 +96,8 @@ FileSystem::FileSystem(bool format)
 	freeMap->Mark(DirectorySector);
     // Second, allocate space for the data blocks containing the contents
     // of the directory and bitmap files.  There better be enough space!
-
 	ASSERT(mapHdr->Allocate(freeMap, FreeMapFileSize, 1));
-	ASSERT(dirHdr->Allocate(freeMap, DirectoryFileSize, 1));
+    ASSERT(dirHdr->Allocate(freeMap, DirectoryFileSize, 1));
 
     // Flush the bitmap and directory FileHeaders back to disk
     // We need to do this before we can "Open" the file, since open
@@ -129,8 +129,7 @@ FileSystem::FileSystem(bool format)
 
         DEBUG('f', "Writing bitmap and directory back to disk.\n");
 	freeMap->WriteBack(freeMapFile);	 // flush changes to disk
-	directory->WriteBack(directoryFile);
-
+    directory->WriteBack(directoryFile);
     	if (DebugIsEnabled('f')) {
     	    freeMap->Print();
     	    directory->Print();
@@ -299,10 +298,16 @@ FileSystem::Open(char *Name)
     //directory->FetchFrom(directoryFile);
    // printf("-------name:%s\n", name);
     sector = directory->Find(name); 
-    //directory->Print();
-   // printf("-------sector:%d\n", sector);
-    if (sector >= 0) 		
-	openFile = new OpenFile(sector);	// name was found in directory 
+    if (sector >= 0) 
+    {
+        //mutex->P();
+        FileHeader *fileHdr = new FileHeader;
+        fileHdr->FetchFrom(sector);
+        fileHdr->numVisits ++;
+        fileHdr->WriteBack(sector);
+    	openFile = new OpenFile(sector);	// name was found in directory 
+        //mutex->V();
+    }
     delete directory;
     return openFile;				// return NULL if not found
 }
@@ -351,28 +356,47 @@ FileSystem::Remove(char *Name)
        return FALSE;			 // file not found 
     }
     */
-    
+    //mutex->P();
     fileHdr = new FileHeader;
     fileHdr->FetchFrom(sector);
     //is file
     if(fileHdr->fileType == 0)
     {
-       // printf("2\n");
-        freeMap = new BitMap(NumSectors);
-        freeMap->FetchFrom(freeMapFile);
+        printf("file visit num:%d\n", fileHdr->numVisits);
+        
+        if(fileHdr->numVisits != 1)
+        {
+            fileHdr->numVisits --;
+            fileHdr->WriteBack(sector);
+            printf("remove failed\n");
+            
+            return FALSE;
+            //mutex->V();
+        }
+        else
+        {
+            fileHdr->numVisits --;
+            fileHdr->WriteBack(sector);
+            
+        
+            freeMap = new BitMap(NumSectors);
+            freeMap->FetchFrom(freeMapFile);
 
-        fileHdr->Deallocate(freeMap);  		// remove data blocks
-        freeMap->Clear(sector);			// remove header block
+            fileHdr->Deallocate(freeMap);  		// remove data blocks
+            freeMap->Clear(sector);			// remove header block
 
-        directory->Remove(name);
-       // printf("2\n");
-        freeMap->WriteBack(freeMapFile);		// flush to disk
+            directory->Remove(name);
+           // printf("2\n");
+            freeMap->WriteBack(freeMapFile);		// flush to disk
 
-        directory->WriteBack(openFile);        // flush to disk
+            directory->WriteBack(openFile);        // flush to disk
+           printf("remove success!\n");
+        }
     }
     //is directory
     else 
     {
+       // mutex->V();
         //printf("3\n");
         OpenFile *dirFile = new OpenFile(sector);
         Directory *dir = new Directory(NumDirEntries);
@@ -413,7 +437,8 @@ FileSystem::Remove(char *Name)
 
     }
     freeMap->Print();
-    delete openFile;
+    if(openFile != NULL)
+        delete openFile;
     delete fileHdr;
     delete directory;
     delete freeMap;

@@ -30,12 +30,15 @@
 OpenFile::OpenFile(int sector)
 { 
     hdr = new FileHeader;
+    synchDisk->rw_P(sector);
     hdr->FetchFrom(sector);
     hdrSectorNumber = sector;
     //printf("open sector:%d\n", sector);
     //printf("lastVisitTime addr:%x\n", &(hdr->lastVisitTime));
-
+    //hdr->numVisits += 1;
     time(&(hdr->lastVisitTime));
+    hdr->WriteBack(sector);
+    synchDisk->rw_V(sector);
     //printf("lastVisitTime:%s\n", ctime(&(hdr->lastVisitTime)));
     seekPosition = 0;
 }
@@ -122,10 +125,12 @@ OpenFile::Write(char *into, int numBytes)
 int
 OpenFile::ReadAt(char *into, int numBytes, int position)
 {
+
+    synchDisk->rw_P(hdrSectorNumber);
+    hdr->FetchFrom(hdrSectorNumber);
+    synchDisk->rw_V(hdrSectorNumber);
     //modify time
-    //printf("read\n");
     time(&(hdr->lastVisitTime));
-    //printf("lastVisitTime:%d\n", hdr->lastVisitTime);
     int fileLength = hdr->FileLength();
     int i, firstSector, lastSector, numSectors;
     char *buf;
@@ -141,14 +146,28 @@ OpenFile::ReadAt(char *into, int numBytes, int position)
     lastSector = divRoundDown(position + numBytes - 1, SectorSize);
     numSectors = 1 + lastSector - firstSector;
 
+
+    synchDisk->arr_P();
+    for(i = firstSector; i<= lastSector; i++)
+    {
+        synchDisk->rw_P(hdr->ByteToSector(i * SectorSize));
+    }
+    synchDisk->arr_V();
+
     // read in all the full and partial sectors that we need
     buf = new char[numSectors * SectorSize];
     for (i = firstSector; i <= lastSector; i++)	
+    {
+        //synchDisk->rw_P(hdr->ByteToSector(i * SectorSize));
         synchDisk->ReadSector(hdr->ByteToSector(i * SectorSize), 
 					&buf[(i - firstSector) * SectorSize]);
+        synchDisk->rw_V(hdr->ByteToSector(i * SectorSize));
+    }
 
     // copy the part we want
     bcopy(&buf[position - (firstSector * SectorSize)], into, numBytes);
+    
+
     delete [] buf;
     return numBytes;
 }
@@ -156,8 +175,12 @@ OpenFile::ReadAt(char *into, int numBytes, int position)
 int
 OpenFile::WriteAt(char *from, int numBytes, int position)
 {
+
+    synchDisk->rw_P(hdrSectorNumber);
+    hdr->FetchFrom(hdrSectorNumber);
+    synchDisk->rw_V(hdrSectorNumber);
+
     //modify time
-    //printf("write\n");
     time(&(hdr->lastVisitTime));
     time(&(hdr->lastWriteTime));
     //printf("lastVisitTime:%d  lastWriteTime:%d hdr->b2s:%d\n", hdr->lastVisitTime, hdr->lastWriteTime, hdr->ByteToSector(0));
@@ -183,13 +206,14 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
         }
         //need to write back header
        // printf("hdr sector number:%d\n", hdrSectorNumber);
+
         hdr->WriteBack(hdrSectorNumber);
         delete freeMap;
         delete freeMapFile;
     }
     DEBUG('f', "Writing %d bytes at %d, from file of length %d.\n", 	
 			numBytes, position, fileLength);
-   // printf("num  bytes:%d\n", numBytes);
+   
     firstSector = divRoundDown(position, SectorSize);
     lastSector = divRoundDown(position + numBytes - 1, SectorSize);
     //printf("firstSector:%d lastSector:%d hdr->:%d\n", firstSector, lastSector, hdr->ByteToSector(0 * SectorSize));
@@ -209,14 +233,22 @@ OpenFile::WriteAt(char *from, int numBytes, int position)
 
 // copy in the bytes we want to change 
     bcopy(from, &buf[position - (firstSector * SectorSize)], numBytes);
-    //printf("hdr->b2s:%d\n", hdr->ByteToSector(0));
-// write modified sectors back
+
+    synchDisk->arr_P();
+    for(i = firstSector; i<= lastSector; i++)
+    {
+        synchDisk->rw_P(hdr->ByteToSector(i * SectorSize));
+    }
+    synchDisk->arr_V();
     for (i = firstSector; i <= lastSector; i++)	
     {
-        //printf("article sector:%d\n",hdr->ByteToSector(i * SectorSize) );
+        //synchDisk->rw_P(hdr->ByteToSector(i * SectorSize));
         synchDisk->WriteSector(hdr->ByteToSector(i * SectorSize), 
 					&buf[(i - firstSector) * SectorSize]);
+       synchDisk->rw_V(hdr->ByteToSector(i * SectorSize));
     }
+    //release visit header
+
     delete [] buf;
     return numBytes;
 }

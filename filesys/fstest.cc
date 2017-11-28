@@ -118,13 +118,14 @@ FileWrite()
 {
     OpenFile *openFile;    
     int i, numBytes;
-
+    printf("%s: ", currentThread->getName());
     printf("Sequential write of %d byte file, in %d byte chunks\n", 
 	FileSize, ContentSize);
     if (!fileSystem->Create(FileName, 1, 0)) {
       printf("Perf test: can't create %s\n", FileName);
       return;
     }
+    currentThread->Yield();
     openFile = fileSystem->Open(FileName);
     if (openFile == NULL) {
 	printf("Perf test: unable to open %s\n", FileName);
@@ -132,6 +133,7 @@ FileWrite()
     }
     for (i = 0; i < FileSize; i += ContentSize) {
         numBytes = openFile->Write(Contents, ContentSize);
+
 	if (numBytes < 10) {
 	    printf("Perf test: unable to write %s\n", FileName);
 	    delete openFile;
@@ -147,7 +149,7 @@ FileRead()
     OpenFile *openFile;    
     char *buffer = new char[ContentSize];
     int i, numBytes;
-
+    printf("%s: ", currentThread->getName());
     printf("Sequential read of %d byte file, in %d byte chunks\n", 
 	FileSize, ContentSize);
 
@@ -175,26 +177,19 @@ PerformanceTest()
     printf("Starting file system performance test:\n");
    // stats->Print();
     printf("-----------------------------------------\n");
-    //fileSystem->Print();
+
     printf("-----------------------------------------\n");  
-    /*fileSystem->Create("root/A", 100, 1);
-    fileSystem->Create("root/A/B", 100, 1);
-    fileSystem->Create("root/A/B/C", 100, 1);
-    fileSystem->Create("root/A/B/D", 100, 0);
-    fileSystem->Create("root/E", 100, 1);
-    */
+    Thread *thread = new Thread("forked thread");
+    thread->Fork(FileRead, 0);    
     FileWrite();
     FileRead();
-    fileSystem->Print();
 
-    /*
-    if (!fileSystem->Remove(FileName)) {
-      printf("Perf test: unable to remove %s\n", FileName);
-      return;
-    }
-    */
-    //fileSystem->Remove("root/A");
-    printf("all delete\n");
+
+    currentThread->Yield();
+    fileSystem->Remove(FileName);
+    fileSystem->Remove(FileName);
+    fileSystem->Remove(FileName);
+   
 
     //stats->Print();
 }

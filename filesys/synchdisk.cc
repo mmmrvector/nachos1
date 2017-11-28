@@ -43,8 +43,13 @@ DiskRequestDone (int arg)
 SynchDisk::SynchDisk(char* name)
 {
     semaphore = new Semaphore("synch disk", 0);
+    for(int i = 0; i < 1024; i ++)
+    {
+        mutex[i] = new Semaphore("sector", 1);
+    }
     lock = new Lock("synch disk lock");
     disk = new Disk(name, DiskRequestDone, (int) this);
+    array_mutex = new Semaphore("array mutex", 1);
 }
 
 //----------------------------------------------------------------------
@@ -58,6 +63,8 @@ SynchDisk::~SynchDisk()
     delete disk;
     delete lock;
     delete semaphore;
+    //delete mutex;
+    //delete array_mutex;
 }
 
 //----------------------------------------------------------------------
@@ -107,4 +114,27 @@ void
 SynchDisk::RequestDone()
 { 
     semaphore->V();
+}
+
+
+void 
+SynchDisk::rw_P(int sector)
+{
+    mutex[sector]->P();
+}
+
+void
+SynchDisk::rw_V(int sector)
+{
+    mutex[sector]->V();
+}
+void
+SynchDisk::arr_P()
+{
+    array_mutex->P();
+}
+void
+SynchDisk::arr_V()
+{
+    array_mutex->V();
 }
